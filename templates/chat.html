@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<br lang="en">
+<style>
+    body {
+        background-color: #000000;
+  color: green;
+        font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', sans-serif;
+
+}
+	.area{
+		border-radius: 8px;
+	
+	}
+	.t1{
+		border-radius: 8px;
+        border: none;
+        background: white;
+        height: 25px;
+        width: 380px;
+}
+	.t2{
+		border-radius: 8px;
+        border: none;
+        background: white;
+        height: 25px;
+	}
+    .topcorner{
+    position:absolute;
+        background-color: #005cbf;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        top:10px;
+        right: 10px;
+        height: 25px;
+        width: content-box;
+ }
+    .button{
+        background-color: #005cbf;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: smaller;
+        height: 25px;
+        width: content-box;
+    }
+</style>
+
+<head>
+    <title>Simple Web Chat</title>
+
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+
+        var socket;
+        $(document).ready(function () {
+            socket = io.connect('http://' + document.domain + ':' + location.port + '/chat');
+            socket.on('connect', function () {
+                socket.emit('join', {});
+            });
+            socket.on('status', function (data) {
+                $('#chat').val($('#chat').val() + '<' + data.msg + '>\n');
+                $('#chat').scrollTop($('#chat')[0].scrollHeight);
+            });
+            socket.on('message', function (data) {
+
+                var n = data.msg.substring(0, 4);
+                if (n.localeCompare('data') == 0) {
+                    // window.open(data.msg, '_blank');
+                    document.getElementById("blah").src = data.msg;
+
+                } else {
+                    $('#chat').val($('#chat').val() + data.msg + '\n');
+                    $('#chat').scrollTop($('#chat')[0].scrollHeight);
+                }
+            });
+
+            $(`#encrypt`).click(function (e) {
+                text = $('#text').val();
+                $('#text').val('');
+                socket.emit('text', {msg: text });
+            });
+            $(`#decrypt`).click(function (e) {
+                var s = getSelected()
+                text = s
+                $('#text1').val('');
+                socket.emit('text1', { msg: text });
+            });
+
+
+        });
+        function leave_room() {
+            socket.emit('left', {}, function () {
+                socket.disconnect();
+                // go back to the login page
+                window.location.href = "{{ url_for('index') }}";
+            });
+        }
+        function getSelected() {
+            var txta = document.getElementById("chat");
+            var start = txta.selectionStart;
+            var end = txta.selectionEnd;
+            var selecttxt = txta.value.substring(start, end);
+            return selecttxt
+        }
+        function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('#blah')
+                        .attr('src', e.target.result)
+                        .width(150)
+                        .height(200);
+
+                    text = e.target.result;
+                    socket.emit('text', { msg: text });
+                };
+                reader.readAsDataURL(input.files[0]);
+
+            }
+        }
+
+
+    </script>
+</head>
+
+<button type="button" class="topcorner" onclick=leave_room()>Leave Chat</button>
+<center>
+
+    <h2>Chat With Encryption Decryption</h2>
+</center>
+<center>
+    <h2>Username : {{session['username']}}</h2><br>
+</center>
+<center> <textarea id="chat" class="area" cols="70" rows="20" placeholder="No messages yet. Start one..."></textarea><br />
+<input type="text" id="text" class="t1" size="30" placeholder="Enter your message here" />
+<button class="button" id="encrypt">Send & Encrypt</button>
+<button id="decrypt" class="button" type="button" value="get selection" onclick="getSelected()">Decrypt<br></button>
+</center>
+<center><br>
+
+    <img id="blah" src="#" alt="your image" style="max-width: 300px;"/></center><br>
+<body>
+<form action = "/success" method = "post" enctype="multipart/form-data">
+    <center>
+    <br><input type='file' name="file"  onchange="readURL(this);"/>
+    <input type="text" class="t2" name="key" placeholder="Enter Key"/>
+    <input type = "submit" class="button" name="Encrypt" value="Encrypt"  />
+        <input type = "submit" class="button" name="Decrypt" value="Decrypt"  />
+    </center>
+</form>
+</body>
+</div>
+
+</html>
